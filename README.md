@@ -23,6 +23,10 @@ npm run dev
 
 Default backend URL: `http://localhost:5000/api`
 
+## Deployment
+
+Frontend is configured for Vercel with SPA routing. Backend is configured for Render with Node/Express.
+
 ## Default Login
 
 Seed the first admin by creating a user in MongoDB or by enabling your own registration/seed flow. The backend exposes protected resource APIs once authenticated.
