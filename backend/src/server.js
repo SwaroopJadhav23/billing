@@ -5,7 +5,7 @@ import { app } from './app.js';
 import { connectDB } from './config/db.js';
 
 const port = process.env.PORT || 5000;
-const host = process.env.HOST || 'localhost';
+const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : process.env.HOST || 'localhost';
 const server = createServer(app);
 const io = new Server(server, {
   cors: { origin: process.env.CLIENT_URL || '*', credentials: true }
@@ -20,7 +20,7 @@ io.on('connection', (socket) => {
 
 connectDB()
   .then(() => {
-    server.listen(port, host, () => console.log(`API running at http://${host}:${port}`));
+    server.listen(port, host, () => console.log(`API running on ${host}:${port}`));
   })
   .catch((error) => {
     console.error(error);
@@ -29,7 +29,7 @@ connectDB()
 
 server.on('error', (error) => {
   if (error.code === 'EADDRINUSE') {
-    console.error(`Port ${port} is already in use. Stop the other process or set PORT=5001 in backend/.env.`);
+    console.error(`Port ${port} is already in use. Stop the other process or set a different PORT.`);
     process.exit(1);
   }
   throw error;
