@@ -1,0 +1,186 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+
+body {
+  margin: 0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dark body {
+  background: #020617;
+  color: #f8fafc;
+}
+
+.card {
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1.25rem;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+.dark .card {
+  border-color: #1e293b;
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.btn-primary,
+.btn-muted {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: 150ms ease;
+}
+
+.btn-primary {
+  background: #ea580c;
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(251, 146, 60, 0.25);
+}
+
+.btn-primary:hover {
+  background: #c2410c;
+}
+
+.btn-muted {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.btn-muted:hover {
+  background: #e2e8f0;
+}
+
+.dark .btn-muted {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.dark .btn-muted:hover {
+  background: #334155;
+}
+
+.input {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: 150ms ease;
+}
+
+.input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 4px #ffedd5;
+}
+
+.dark .input {
+  border-color: #334155;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.dark .input:focus {
+  box-shadow: 0 0 0 4px rgba(124, 45, 18, 0.5);
+}
+
+.print-receipt {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: 80mm 140mm;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 80mm !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #fff !important;
+  }
+
+  body *:not(.print-receipt):not(.print-receipt *) {
+    visibility: hidden !important;
+  }
+
+  .print-receipt,
+  .print-receipt * {
+    visibility: visible !important;
+  }
+
+  .print-receipt {
+    display: block !important;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 72mm;
+    min-height: 0;
+    padding: 4mm;
+    background: #fff;
+    color: #000;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.35;
+    box-shadow: none;
+  }
+
+  .receipt-center {
+    text-align: center;
+  }
+
+  .receipt-center h1 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .receipt-center p,
+  .receipt-section p {
+    margin: 2px 0;
+  }
+
+  .receipt-section {
+    border-top: 1px dashed #000;
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+
+  .receipt-row {
+    display: grid;
+    grid-template-columns: 1fr 28px 58px;
+    gap: 4px;
+    margin: 3px 0;
+  }
+
+  .receipt-row span:last-child {
+    text-align: right;
+  }
+
+  .receipt-head,
+  .receipt-total {
+    font-weight: 700;
+  }
+
+  .receipt-total {
+    border-top: 1px dashed #000;
+    margin-top: 6px;
+    padding-top: 6px;
+    font-size: 13px;
+  }
+}
