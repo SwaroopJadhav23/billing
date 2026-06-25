@@ -10,12 +10,14 @@ export default function Menu() {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(empty);
+  const [imageFile, setImageFile] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const { items, create, update, remove } = useResource('menu-items', { search, limit: 50 });
 
   function openAdd() {
     setEditingItem(null);
     setForm(empty);
+    setImageFile(null);
     setOpen(true);
   }
 
@@ -31,6 +33,7 @@ export default function Menu() {
       isAvailable: item.isAvailable ?? true,
       status: item.status || 'active'
     });
+    setImageFile(null);
     setOpen(true);
   }
 
@@ -38,19 +41,26 @@ export default function Menu() {
     setOpen(false);
     setEditingItem(null);
     setForm(empty);
+    setImageFile(null);
   }
 
   function handleImage(event) {
     const file = event.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setForm((current) => ({ ...current, image: reader.result }));
-    reader.readAsDataURL(file);
+    setImageFile(file);
+    setForm((current) => ({ ...current, image: URL.createObjectURL(file) }));
   }
 
   function submit(event) {
     event.preventDefault();
-    const payload = { ...form, price: Number(form.price), gstPercentage: Number(form.gstPercentage) };
+    const payload = new FormData();
+    Object.entries({
+      ...form,
+      price: Number(form.price),
+      gstPercentage: Number(form.gstPercentage)
+    }).forEach(([key, value]) => payload.append(key, value ?? ''));
+    if (imageFile) payload.append('imageFile', imageFile);
+
     if (editingItem) {
       update.mutate({ id: editingItem._id, payload }, { onSuccess: closeModal });
     } else {
@@ -112,7 +122,7 @@ export default function Menu() {
           {form.image && (
             <div className="sm:col-span-2">
               <img src={form.image} alt="Food preview" className="h-44 w-full rounded-3xl object-cover" />
-              <button type="button" className="btn-muted mt-3" onClick={() => setForm({ ...form, image: '' })}>Remove Image</button>
+              <button type="button" className="btn-muted mt-3" onClick={() => { setImageFile(null); setForm({ ...form, image: '' }); }}>Remove Image</button>
             </div>
           )}
           <button className="btn-primary sm:col-span-2">{editingItem ? 'Update Item' : 'Save Item'}</button>

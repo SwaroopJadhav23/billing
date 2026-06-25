@@ -5,7 +5,8 @@ import { app } from './app.js';
 import { connectDB } from './config/db.js';
 
 const port = process.env.PORT || 5000;
-const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : process.env.HOST || 'localhost';
+const isHostedOnRender = Boolean(process.env.RENDER || process.env.RENDER_SERVICE_ID || process.env.RENDER_EXTERNAL_URL);
+const host = process.env.NODE_ENV === 'production' || isHostedOnRender ? '0.0.0.0' : process.env.HOST || 'localhost';
 const server = createServer(app);
 const io = new Server(server, {
   cors: { origin: process.env.CLIENT_URL || '*', credentials: true }

@@ -10,7 +10,6 @@ import { Expense } from '../models/Expense.js';
 import { Inventory } from '../models/Inventory.js';
 import { Kot } from '../models/Kot.js';
 import { MenuCategory } from '../models/MenuCategory.js';
-import { MenuItem } from '../models/MenuItem.js';
 import { Order } from '../models/Order.js';
 import { Payment } from '../models/Payment.js';
 import { Report } from '../models/Report.js';
@@ -21,6 +20,7 @@ import { Staff } from '../models/Staff.js';
 import { Supplier } from '../models/Supplier.js';
 import { Table } from '../models/Table.js';
 import authRoutes from './authRoutes.js';
+import menuItemRoutes from './menuItemRoutes.js';
 import { crudRoutes } from './resourceRoutes.js';
 
 const router = express.Router();
@@ -29,7 +29,7 @@ router.use('/auth', authRoutes);
 router.get('/dashboard', protect, allowRoles(...PERMISSIONS.dashboard), getDashboard);
 
 router.use('/menu-categories', crudRoutes(MenuCategory, PERMISSIONS.menu));
-router.use('/menu-items', crudRoutes(MenuItem, PERMISSIONS.menu));
+router.use('/menu-items', menuItemRoutes);
 router.use('/tables', crudRoutes(Table, PERMISSIONS.tables));
 router.use('/customers', crudRoutes(Customer, PERMISSIONS.customers));
 router.use('/inventory', crudRoutes(Inventory, PERMISSIONS.inventory, { populate: 'supplier' }));
