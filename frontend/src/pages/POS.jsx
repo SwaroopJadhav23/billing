@@ -14,7 +14,6 @@ export default function POS() {
   const [serviceCharge, setServiceCharge] = useState(0);
   const [paymentMode, setPaymentMode] = useState('cash');
   const [customer, setCustomer] = useState({ name: '', mobile: '' });
-  const [printBill, setPrintBill] = useState(null);
   const { items } = useResource('menu-items', { limit: 100 });
 
   const visibleItems = items.filter((item) => (category === 'All' || item.categoryName === category) && item.name.toLowerCase().includes(search.toLowerCase()) && item.isAvailable);
@@ -37,6 +36,108 @@ export default function POS() {
     setCart((current) => current.map((item) => item._id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    })[char]);
+  }
+
+  function printReceipt(receipt) {
+    const itemRows = receipt.items.map((item) => `
+      <div class="row">
+        <span>${escapeHtml(item.name)}</span>
+        <span>${item.quantity}</span>
+        <span>${currency(Number(item.price || 0) * Number(item.quantity || 1))}</span>
+      </div>
+    `).join('');
+
+    const customerBlock = receipt.customerName || receipt.customerMobile ? `
+      <div class="section">
+        ${receipt.customerName ? `<p>Customer: ${escapeHtml(receipt.customerName)}</p>` : ''}
+        ${receipt.customerMobile ? `<p>Mobile: ${escapeHtml(receipt.customerMobile)}</p>` : ''}
+      </div>
+    ` : '';
+
+    const receiptHtml = `
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Receipt</title>
+          <style>
+            @page { size: 80mm 120mm; margin: 0; }
+            * { box-sizing: border-box; }
+            html, body {
+              width: 80mm;
+              margin: 0;
+              padding: 0;
+              background: #fff;
+              color: #000;
+              font-family: "Courier New", monospace;
+              font-size: 11px;
+              line-height: 1.35;
+            }
+            body { padding: 4mm; }
+            h1 { margin: 0 0 4px; text-align: center; font-size: 16px; }
+            p { margin: 2px 0; }
+            .center { text-align: center; }
+            .section { border-top: 1px dashed #000; margin-top: 8px; padding-top: 8px; }
+            .row { display: grid; grid-template-columns: 1fr 28px 58px; gap: 4px; margin: 3px 0; }
+            .row span:last-child { text-align: right; }
+            .head, .total { font-weight: 700; }
+            .total { border-top: 1px dashed #000; margin-top: 6px; padding-top: 6px; font-size: 13px; }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            <h1>Restaurant POS</h1>
+            <p>Receipt / Tax Invoice</p>
+            <p>Invoice: ${escapeHtml(receipt.invoiceNumber)}</p>
+            <p>${escapeHtml(new Date(receipt.createdAt || Date.now()).toLocaleString())}</p>
+          </div>
+          ${customerBlock}
+          <div class="section">
+            <div class="row head"><span>Item</span><span>Qty</span><span>Amt</span></div>
+            ${itemRows}
+          </div>
+          <div class="section">
+            <div class="row"><span>Subtotal</span><span></span><span>${currency(receipt.subtotal)}</span></div>
+            <div class="row"><span>GST</span><span></span><span>${currency(receipt.gstTotal)}</span></div>
+            <div class="row"><span>Discount</span><span></span><span>${currency(receipt.discount)}</span></div>
+            <div class="row"><span>Service</span><span></span><span>${currency(receipt.serviceCharge)}</span></div>
+            <div class="row total"><span>Total</span><span></span><span>${currency(receipt.grandTotal)}</span></div>
+            <div class="row"><span>Payment</span><span></span><span>${escapeHtml(receipt.paymentMode.toUpperCase())}</span></div>
+          </div>
+          <div class="center section"><p>Thank you, visit again!</p></div>
+        </body>
+      </html>
+    `;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const printWindow = iframe.contentWindow;
+    printWindow.document.open();
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
+
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+      setTimeout(() => iframe.remove(), 500);
+    }, 100);
+  }
+
   async function saveBill() {
     const receiptItems = cart.map((item) => ({
       name: item.name,
@@ -53,7 +154,7 @@ export default function POS() {
     };
     const { data: order } = await api.post('/orders', orderPayload);
     const { data: bill } = await api.post('/bills/generate', { order: order._id, paymentMode, paidAmount: totals.grandTotal, grandTotal: totals.grandTotal, restaurant: { name: 'Restaurant POS' } });
-    setPrintBill({
+    printReceipt({
       ...bill,
       items: receiptItems,
       customerName: customer.name,
@@ -65,11 +166,8 @@ export default function POS() {
       grandTotal: totals.grandTotal,
       paymentMode
     });
-    setTimeout(() => {
-      window.print();
-      setCart([]);
-      setCustomer({ name: '', mobile: '' });
-    }, 100);
+    setCart([]);
+    setCustomer({ name: '', mobile: '' });
   }
 
   return (
@@ -144,48 +242,6 @@ export default function POS() {
         </div>
         </aside>
       </div>
-
-      {printBill && (
-        <div className="print-receipt">
-          <div className="receipt-center">
-            <h1>Restaurant POS</h1>
-            <p>Receipt / Tax Invoice</p>
-            <p>Invoice: {printBill.invoiceNumber}</p>
-            <p>{new Date(printBill.createdAt || Date.now()).toLocaleString()}</p>
-          </div>
-          {(printBill.customerName || printBill.customerMobile) && (
-            <div className="receipt-section">
-              {printBill.customerName && <p>Customer: {printBill.customerName}</p>}
-              {printBill.customerMobile && <p>Mobile: {printBill.customerMobile}</p>}
-            </div>
-          )}
-          <div className="receipt-section">
-            <div className="receipt-row receipt-head">
-              <span>Item</span>
-              <span>Qty</span>
-              <span>Amt</span>
-            </div>
-            {printBill.items.map((item, index) => (
-              <div className="receipt-row" key={`${item.name}-${index}`}>
-                <span>{item.name}</span>
-                <span>{item.quantity}</span>
-                <span>{currency(Number(item.price || 0) * Number(item.quantity || 1))}</span>
-              </div>
-            ))}
-          </div>
-          <div className="receipt-section">
-            <div className="receipt-row"><span>Subtotal</span><span>{currency(printBill.subtotal)}</span></div>
-            <div className="receipt-row"><span>GST</span><span>{currency(printBill.gstTotal)}</span></div>
-            <div className="receipt-row"><span>Discount</span><span>{currency(printBill.discount)}</span></div>
-            <div className="receipt-row"><span>Service Charge</span><span>{currency(printBill.serviceCharge)}</span></div>
-            <div className="receipt-row receipt-total"><span>Total</span><span>{currency(printBill.grandTotal)}</span></div>
-            <div className="receipt-row"><span>Payment</span><span>{printBill.paymentMode.toUpperCase()}</span></div>
-          </div>
-          <div className="receipt-center receipt-section">
-            <p>Thank you, visit again!</p>
-          </div>
-        </div>
-      )}
     </>
   );
 }
