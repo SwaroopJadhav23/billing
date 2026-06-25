@@ -26,7 +26,7 @@ Default backend URL: `http://localhost:5000/api`
 ## Deployment
 
 Frontend is configured for Vercel with SPA routing. Backend is configured for Render with Node/Express.
-Latest deployment trigger: Vercel redeploy check.
+Latest deployment trigger: Render and Vercel redeploy check.
 
 Render backend must run with `NODE_ENV=production` and bind to Render's provided `PORT`.
 Vercel frontend must set `VITE_API_URL` to the Render backend URL plus `/api`.
