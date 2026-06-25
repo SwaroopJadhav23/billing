@@ -8,7 +8,6 @@ import ResetPassword from './pages/auth/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Tables from './pages/Tables';
-import KOT from './pages/KOT';
 import Orders from './pages/Orders';
 import Menu from './pages/Menu';
 import Customers from './pages/Customers';
@@ -22,7 +21,6 @@ const protectedPages = [
   { path: '/', element: <Dashboard /> },
   { path: '/pos', element: <POS /> },
   { path: '/tables', element: <Tables /> },
-  { path: '/kot', element: <KOT /> },
   { path: '/orders', element: <Orders /> },
   { path: '/menu', element: <Menu /> },
   { path: '/customers', element: <Customers /> },

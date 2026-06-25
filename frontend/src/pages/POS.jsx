@@ -74,20 +74,20 @@ export default function POS() {
 
   return (
     <>
-      <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
+      <div className="grid w-full min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
         <section className="space-y-4">
         <div className="card">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex min-w-0 flex-wrap gap-2">
               {categories.map((name) => <button key={name} className={category === name ? 'btn-primary whitespace-nowrap' : 'btn-muted whitespace-nowrap'} onClick={() => setCategory(name)}>{name}</button>)}
             </div>
-            <label className="relative min-w-64">
-              <Search className="absolute left-3 top-3 text-slate-400" size={18} />
-              <input className="input pl-10" placeholder="Search menu item" value={search} onChange={(event) => setSearch(event.target.value)} />
+            <label className="relative w-full shrink-0 xl:w-72">
+              <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input className="input" style={{ paddingLeft: '2.75rem' }} placeholder="Search menu item" value={search} onChange={(event) => setSearch(event.target.value)} />
             </label>
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
           {visibleItems.map((item) => (
             <button key={item._id} onClick={() => addItem(item)} className="card text-left transition hover:-translate-y-1">
               {item.image ? (

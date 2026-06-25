@@ -7,9 +7,9 @@ export default function DataTable({ title, columns, rows, search, onSearch, acti
         <h3 className="text-lg font-black">{title}</h3>
         <div className="flex flex-col gap-2 sm:flex-row">
           {onSearch && (
-            <label className="relative">
-              <Search className="absolute left-3 top-3 text-slate-400" size={18} />
-              <input className="input pl-10" placeholder="Search..." value={search || ''} onChange={(event) => onSearch(event.target.value)} />
+            <label className="relative w-full sm:w-64">
+              <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input className="input" style={{ paddingLeft: '2.75rem' }} placeholder="Search..." value={search || ''} onChange={(event) => onSearch(event.target.value)} />
             </label>
           )}
           {actions}
