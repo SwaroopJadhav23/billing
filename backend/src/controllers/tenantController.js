@@ -8,6 +8,7 @@ import { MenuItem } from '../models/MenuItem.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/apiError.js';
 import { ROLES } from '../config/roles.js';
+import { mergeTenantFeatures } from '../config/tenantFeatures.js';
 
 export const listTenants = asyncHandler(async (req, res) => {
   const { search, status, page = 1, limit = 20 } = req.query;
@@ -59,7 +60,8 @@ export const createTenant = asyncHandler(async (req, res) => {
     mobile: mobile || adminMobile,
     address,
     gstNumber,
-    status: 'active'
+    status: 'active',
+    features: mergeTenantFeatures(req.body.features)
   });
 
   const admin = await User.create({
@@ -67,6 +69,7 @@ export const createTenant = asyncHandler(async (req, res) => {
     email: String(adminEmail).toLowerCase(),
     mobile: adminMobile || mobile,
     password: adminPassword,
+    loginPassword: adminPassword,
     role: ROLES.MANAGER,
     tenant: tenant._id,
     status: 'active'
@@ -80,7 +83,9 @@ export const createTenant = asyncHandler(async (req, res) => {
       email: admin.email,
       mobile: admin.mobile,
       role: admin.role,
-      tenant: admin.tenant
+      tenant: admin.tenant,
+      loginId: admin.email,
+      loginPassword: adminPassword
     }
   });
 });
@@ -97,7 +102,7 @@ export const getTenant = asyncHandler(async (req, res) => {
     Order.countDocuments(tenantFilter),
     Customer.countDocuments(tenantFilter),
     Bill.aggregate([{ $match: tenantFilter }, { $group: { _id: null, total: { $sum: '$grandTotal' } } }]),
-    User.find({ tenant: tenant._id }).select('-password')
+    User.find({ tenant: tenant._id }).select('+loginPassword')
   ]);
 
   res.json({
@@ -110,7 +115,32 @@ export const getTenant = asyncHandler(async (req, res) => {
       customers: customersCount,
       revenue: revenueAgg[0]?.total || 0
     },
-    admins
+    admins: admins.map((admin) => {
+      const item = admin.toObject();
+      return {
+        ...item,
+        loginId: item.email,
+        password: item.loginPassword || null
+      };
+    })
+  });
+});
+
+export const updateTenantAdminPassword = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  if (!password || String(password).length < 6) {
+    throw new ApiError(400, 'Password must be at least 6 characters');
+  }
+  const admin = await User.findOne({ _id: req.params.userId, tenant: req.params.id }).select('+password +loginPassword');
+  if (!admin) throw new ApiError(404, 'Store admin not found');
+  admin.password = password;
+  admin.loginPassword = password;
+  await admin.save();
+  res.json({
+    _id: admin._id,
+    email: admin.email,
+    loginId: admin.email,
+    password
   });
 });
 
@@ -120,8 +150,24 @@ export const updateTenant = asyncHandler(async (req, res) => {
   allowed.forEach((key) => {
     if (req.body[key] !== undefined) payload[key] = req.body[key];
   });
+  if (req.body.features !== undefined) {
+    const existing = await Tenant.findById(req.params.id).select('features');
+    if (!existing) throw new ApiError(404, 'Store not found');
+    payload.features = mergeTenantFeatures({
+      ...(existing.features?.toObject?.() || existing.features || {}),
+      ...req.body.features
+    });
+  }
   const tenant = await Tenant.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
   if (!tenant) throw new ApiError(404, 'Store not found');
+
+  if (payload.status) {
+    await User.updateMany(
+      { tenant: tenant._id, role: { $ne: ROLES.SUPER_ADMIN } },
+      { status: payload.status === 'active' ? 'active' : 'inactive' }
+    );
+  }
+
   res.json(tenant);
 });
 

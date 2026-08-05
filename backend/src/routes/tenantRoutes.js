@@ -9,7 +9,8 @@ import {
   listTenantInventory,
   listTenantOrders,
   listTenants,
-  updateTenant
+  updateTenant,
+  updateTenantAdminPassword
 } from '../controllers/tenantController.js';
 
 const router = express.Router();
@@ -20,6 +21,7 @@ router.get('/', listTenants);
 router.post('/', createTenant);
 router.get('/:id', getTenant);
 router.patch('/:id', updateTenant);
+router.patch('/:id/admins/:userId/password', updateTenantAdminPassword);
 router.get('/:id/bills', listTenantBills);
 router.get('/:id/inventory', listTenantInventory);
 router.get('/:id/orders', listTenantOrders);

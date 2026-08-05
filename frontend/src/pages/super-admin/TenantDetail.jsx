@@ -3,21 +3,110 @@ import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Package, ReceiptText, ShoppingCart, Users, Wallet } from 'lucide-react';
 import DataTable from '../../components/DataTable';
+import Modal from '../../components/Modal';
 import StatCard from '../../components/StatCard';
+import { defaultTenantFeatures, TENANT_FEATURE_KEYS, TENANT_FEATURE_LABELS } from '../../config/tenantFeatures';
 import { api } from '../../services/api';
 import { currency, dateTime } from '../../utils/format';
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
+  { id: 'branches', label: 'Branches' },
   { id: 'bills', label: 'Bills' },
   { id: 'inventory', label: 'Inventory' },
   { id: 'orders', label: 'Orders' },
   { id: 'customers', label: 'Customers' }
 ];
 
+function AdminCredentialCard({ admin, tenantId, onUpdated }) {
+  const [editing, setEditing] = useState(false);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(true);
+
+  const savePassword = useMutation({
+    mutationFn: async (nextPassword) => (
+      await api.patch(`/tenants/${tenantId}/admins/${admin._id}/password`, { password: nextPassword })
+    ).data,
+    onSuccess: () => {
+      setEditing(false);
+      setPassword('');
+      setError('');
+      onUpdated?.();
+    },
+    onError: (err) => setError(err.response?.data?.message || 'Unable to update password')
+  });
+
+  const loginId = admin.loginId || admin.email || '-';
+  const storedPassword = admin.password || admin.loginPassword || null;
+
+  return (
+    <div className="min-w-[300px] flex-1 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+      <p className="font-bold">{admin.name || '-'}</p>
+      <div className="mt-3 space-y-2 text-sm">
+        <div className="flex items-start justify-between gap-2 rounded-xl bg-white px-3 py-2 dark:bg-slate-900">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Login ID</p>
+            <p className="font-semibold break-all">{loginId}</p>
+          </div>
+        </div>
+        <div className="rounded-xl bg-white px-3 py-2 dark:bg-slate-900">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Password</p>
+            {storedPassword && (
+              <button type="button" className="text-xs font-semibold text-brand-700" onClick={() => setShowPassword((value) => !value)}>
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            )}
+          </div>
+          {editing ? (
+            <form
+              className="mt-2 flex flex-col gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setError('');
+                savePassword.mutate(password);
+              }}
+            >
+              <input
+                className="input"
+                type="text"
+                placeholder="New password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                minLength={6}
+                required
+              />
+              {error && <p className="text-xs text-red-600">{error}</p>}
+              <div className="flex gap-2">
+                <button className="btn-primary" disabled={savePassword.isPending}>{savePassword.isPending ? 'Saving...' : 'Save'}</button>
+                <button type="button" className="btn-muted" onClick={() => { setEditing(false); setError(''); setPassword(''); }}>Cancel</button>
+              </div>
+            </form>
+          ) : (
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <p className="font-semibold break-all">{storedPassword ? (showPassword ? storedPassword : '••••••••') : 'Not saved yet'}</p>
+              <button type="button" className="btn-muted shrink-0" onClick={() => setEditing(true)}>
+                {storedPassword ? 'Change' : 'Set password'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-600 dark:bg-slate-900">{admin.mobile || 'No mobile'}</span>
+        <span className="rounded-full bg-brand-50 px-2.5 py-1 font-semibold capitalize text-brand-700 dark:bg-orange-950/40 dark:text-orange-200">{admin.role || '-'}</span>
+        <span className={`rounded-full px-2.5 py-1 font-semibold ${admin.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>{admin.status || '-'}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function TenantDetail() {
   const { id } = useParams();
   const [tab, setTab] = useState('overview');
+  const [branchOpen, setBranchOpen] = useState(false);
+  const [branchForm, setBranchForm] = useState({ name: '', code: '', address: '', mobile: '', managerName: '', status: 'active' });
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -53,8 +142,23 @@ export default function TenantDetail() {
     enabled: tab === 'customers' && Boolean(id)
   });
 
-  const toggleStatus = useMutation({
-    mutationFn: async (status) => (await api.patch(`/tenants/${id}`, { status })).data,
+  const branchesQuery = useQuery({
+    queryKey: ['tenant-branches', id],
+    queryFn: async () => (await api.get('/branches', { params: { tenantId: id, limit: 100 } })).data,
+    enabled: (tab === 'branches' || tab === 'overview') && Boolean(id)
+  });
+
+  const createBranch = useMutation({
+    mutationFn: async (payload) => (await api.post('/branches', { ...payload, tenant: id })).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-branches', id] });
+      setBranchOpen(false);
+      setBranchForm({ name: '', code: '', address: '', mobile: '', managerName: '', status: 'active' });
+    }
+  });
+
+  const updateTenant = useMutation({
+    mutationFn: async (payload) => (await api.patch(`/tenants/${id}`, payload)).data,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tenant', id] })
   });
 
@@ -62,6 +166,16 @@ export default function TenantDetail() {
   if (error || !data?.tenant) return <div className="card p-6 text-red-600">Unable to load store details.</div>;
 
   const { tenant, summary, admins = [] } = data;
+  const features = defaultTenantFeatures(tenant.features || {});
+
+  function toggleFeature(key) {
+    updateTenant.mutate({
+      features: {
+        ...features,
+        [key]: !features[key]
+      }
+    });
+  }
 
   return (
     <div className="space-y-4">
@@ -80,8 +194,8 @@ export default function TenantDetail() {
           </span>
           <button
             className="btn-muted"
-            disabled={toggleStatus.isPending}
-            onClick={() => toggleStatus.mutate(tenant.status === 'active' ? 'inactive' : 'active')}
+            disabled={updateTenant.isPending}
+            onClick={() => updateTenant.mutate({ status: tenant.status === 'active' ? 'inactive' : 'active' })}
           >
             {tenant.status === 'active' ? 'Deactivate' : 'Activate'}
           </button>
@@ -109,26 +223,104 @@ export default function TenantDetail() {
       </div>
 
       {tab === 'overview' && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-4">
           <div className="card space-y-2 p-5">
             <h3 className="text-lg font-black">Store profile</h3>
-            <p><span className="text-slate-500">Owner:</span> {tenant.ownerName || '-'}</p>
-            <p><span className="text-slate-500">GST:</span> {tenant.gstNumber || '-'}</p>
-            <p><span className="text-slate-500">Customers:</span> {summary?.customers ?? 0}</p>
-            <p><span className="text-slate-500">Created:</span> {dateTime(tenant.createdAt)}</p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <p><span className="text-slate-500">Owner:</span> {tenant.ownerName || '-'}</p>
+              <p><span className="text-slate-500">GST:</span> {tenant.gstNumber || '-'}</p>
+              <p><span className="text-slate-500">Customers:</span> {summary?.customers ?? 0}</p>
+              <p><span className="text-slate-500">Created:</span> {dateTime(tenant.createdAt)}</p>
+            </div>
           </div>
+
+          <div className="card space-y-4 p-5">
+            <h3 className="text-lg font-black">Store admins</h3>
+            {admins.length === 0 ? (
+              <p className="text-sm text-slate-500">No store admins found.</p>
+            ) : (
+              <div className="flex gap-3 overflow-x-auto pb-1">
+                {admins.map((admin) => (
+                  <AdminCredentialCard
+                    key={admin._id}
+                    admin={admin}
+                    tenantId={id}
+                    onUpdated={() => queryClient.invalidateQueries({ queryKey: ['tenant', id] })}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="card space-y-4 p-5">
+            <div>
+              <h3 className="text-lg font-black">Features</h3>
+              <p className="mt-1 text-sm text-slate-500">Toggle modules available to this client’s store login.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {TENANT_FEATURE_KEYS.map((key) => {
+                const enabled = features[key];
+                return (
+                  <label
+                    key={key}
+                    className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border px-4 py-3 ${enabled ? 'border-brand-200 bg-brand-50/60 dark:border-orange-900 dark:bg-orange-950/20' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950'}`}
+                  >
+                    <span className="text-sm font-semibold">{TENANT_FEATURE_LABELS[key]}</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={enabled}
+                      disabled={updateTenant.isPending}
+                      onClick={() => toggleFeature(key)}
+                      className={`relative h-7 w-12 rounded-full transition ${enabled ? 'bg-brand-600' : 'bg-slate-300 dark:bg-slate-700'}`}
+                    >
+                      <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition ${enabled ? 'left-5' : 'left-0.5'}`} />
+                    </button>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'branches' && (
+        <>
           <DataTable
-            title="Store admins"
-            rows={admins}
+            title={`Branches (${branchesQuery.data?.total || branchesQuery.data?.items?.length || 0})`}
+            rows={branchesQuery.data?.items || []}
+            actions={<button className="btn-primary" onClick={() => setBranchOpen(true)}>Add Branch</button>}
             columns={[
-              { key: 'name', label: 'Name' },
-              { key: 'email', label: 'Email' },
+              { key: 'name', label: 'Branch' },
+              { key: 'code', label: 'Code' },
+              { key: 'managerName', label: 'Manager' },
               { key: 'mobile', label: 'Mobile' },
-              { key: 'role', label: 'Role' },
-              { key: 'status', label: 'Status' }
+              { key: 'address', label: 'Address' },
+              { key: 'status', label: 'Status' },
+              { key: 'createdAt', label: 'Created', render: (row) => dateTime(row.createdAt) }
             ]}
           />
-        </div>
+          <Modal title="Add Branch" open={branchOpen} onClose={() => setBranchOpen(false)}>
+            <form
+              className="grid gap-3 sm:grid-cols-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                createBranch.mutate(branchForm);
+              }}
+            >
+              <input className="input" placeholder="Branch name" value={branchForm.name} onChange={(event) => setBranchForm({ ...branchForm, name: event.target.value })} required />
+              <input className="input" placeholder="Branch code" value={branchForm.code} onChange={(event) => setBranchForm({ ...branchForm, code: event.target.value })} />
+              <input className="input" placeholder="Manager name" value={branchForm.managerName} onChange={(event) => setBranchForm({ ...branchForm, managerName: event.target.value })} />
+              <input className="input" placeholder="Mobile" value={branchForm.mobile} onChange={(event) => setBranchForm({ ...branchForm, mobile: event.target.value })} />
+              <input className="input sm:col-span-2" placeholder="Address" value={branchForm.address} onChange={(event) => setBranchForm({ ...branchForm, address: event.target.value })} />
+              <select className="input" value={branchForm.status} onChange={(event) => setBranchForm({ ...branchForm, status: event.target.value })}>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <button className="btn-primary sm:col-span-2" disabled={createBranch.isPending}>{createBranch.isPending ? 'Saving...' : 'Save Branch'}</button>
+            </form>
+          </Modal>
+        </>
       )}
 
       {tab === 'bills' && (

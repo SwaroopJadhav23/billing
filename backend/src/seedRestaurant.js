@@ -48,6 +48,7 @@ async function seedRestaurant() {
     email: 'restaurant@volmier.test',
     mobile: '9000000003',
     password: '123456',
+    loginPassword: '123456',
     role: ROLES.MANAGER,
     tenant: tenant._id,
     status: 'active'

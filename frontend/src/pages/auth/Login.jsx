@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { ChefHat } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { homePathForRole } from '../../routes/permissions';
@@ -7,15 +7,19 @@ import { homePathForRole } from '../../routes/permissions';
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
-  const { login, loading } = useAuth();
+  const { login, loading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+
+  if (isAuthenticated) {
+    return <Navigate to={homePathForRole(user?.role, user?.features)} replace />;
+  }
 
   async function submit(event) {
     event.preventDefault();
     setError('');
     try {
-      const user = await login(form.email, form.password);
-      navigate(homePathForRole(user?.role), { replace: true });
+      const loggedInUser = await login(form.email, form.password);
+      navigate(homePathForRole(loggedInUser?.role, loggedInUser?.features), { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to sign in');
     }

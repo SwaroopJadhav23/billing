@@ -20,7 +20,7 @@ export default function ForgotPassword() {
         <input className="input mt-6" type="email" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} required />
         {message && <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">{message}</p>}
         <button className="btn-primary mt-6 w-full">Send Reset Link</button>
-        <Link className="mt-4 block text-center text-sm text-brand-600" to="/login">Back to login</Link>
+        <Link className="mt-4 block text-center text-sm text-brand-600" to="/">Back to login</Link>
       </form>
     </div>
   );

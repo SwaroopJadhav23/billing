@@ -13,6 +13,7 @@ import Menu from './pages/Menu';
 import Customers from './pages/Customers';
 import Inventory from './pages/Inventory';
 import Staff from './pages/Staff';
+import Branches from './pages/Branches';
 import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -22,7 +23,7 @@ import TenantDetail from './pages/super-admin/TenantDetail';
 const protectedPages = [
   { path: '/super-admin', element: <Tenants />, roles: routePermissions['/super-admin'] },
   { path: '/super-admin/tenants/:id', element: <TenantDetail />, roles: routePermissions['/super-admin/tenants/:id'] },
-  { path: '/', element: <Dashboard />, roles: routePermissions['/'] },
+  { path: '/dashboard', element: <Dashboard />, roles: routePermissions['/dashboard'] },
   { path: '/pos', element: <POS />, roles: routePermissions['/pos'] },
   { path: '/tables', element: <Tables />, roles: routePermissions['/tables'] },
   { path: '/orders', element: <Orders />, roles: routePermissions['/orders'] },
@@ -30,6 +31,7 @@ const protectedPages = [
   { path: '/customers', element: <Customers />, roles: routePermissions['/customers'] },
   { path: '/inventory', element: <Inventory />, roles: routePermissions['/inventory'] },
   { path: '/staff', element: <Staff />, roles: routePermissions['/staff'] },
+  { path: '/branches', element: <Branches />, roles: routePermissions['/branches'] },
   { path: '/expenses', element: <Expenses />, roles: routePermissions['/expenses'] },
   { path: '/reports', element: <Reports />, roles: routePermissions['/reports'] },
   { path: '/settings', element: <Settings />, roles: routePermissions['/settings'] }
@@ -38,7 +40,8 @@ const protectedPages = [
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<AppLayout />}>
@@ -50,7 +53,7 @@ export default function App() {
           />
         ))}
       </Route>
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

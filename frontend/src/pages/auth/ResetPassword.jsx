@@ -21,7 +21,7 @@ export default function ResetPassword() {
         <input className="input mt-6" placeholder="Reset token" value={form.token} onChange={(event) => setForm({ ...form, token: event.target.value })} required />
         <input className="input mt-4" type="password" placeholder="New password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
         <button className="btn-primary mt-6 w-full">Reset Password</button>
-        <Link className="mt-4 block text-center text-sm text-brand-600" to="/login">Back to login</Link>
+        <Link className="mt-4 block text-center text-sm text-brand-600" to="/">Back to login</Link>
       </form>
     </div>
   );

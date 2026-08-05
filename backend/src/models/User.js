@@ -9,8 +9,11 @@ const userSchema = new mongoose.Schema(
     mobile: { type: String, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, minlength: 6, select: false },
+    /** Plaintext copy for Super Admin handover only — never returned on normal auth */
+    loginPassword: { type: String, select: false },
     role: { type: String, enum: Object.values(ROLES), default: ROLES.CASHIER },
     tenant: tenantRef,
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', default: null },
     permissions: [{ type: String }],
     joiningDate: Date,
     resetPasswordToken: String,

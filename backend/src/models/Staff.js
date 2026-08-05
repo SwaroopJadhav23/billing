@@ -5,6 +5,7 @@ import { tenantRef } from './tenantRef.js';
 const staffSchema = new mongoose.Schema(
   {
     tenant: tenantRef,
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', default: null },
     name: { type: String, required: true },
     mobile: String,
     email: String,

@@ -8,12 +8,19 @@ const roles = ['manager', 'cashier', 'waiter', 'kitchen_staff'];
 
 export default function Staff() {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', mobile: '', email: '', role: 'cashier', joiningDate: '', status: 'active' });
+  const [form, setForm] = useState({ name: '', mobile: '', email: '', role: 'cashier', joiningDate: '', status: 'active', branch: '' });
   const { items, create } = useResource('staff', { limit: 100 });
+  const { items: branches } = useResource('branches', { limit: 100, status: 'active' });
 
   function submit(event) {
     event.preventDefault();
-    create.mutate(form, { onSuccess: () => setOpen(false) });
+    const payload = { ...form, branch: form.branch || null };
+    create.mutate(payload, {
+      onSuccess: () => {
+        setOpen(false);
+        setForm({ name: '', mobile: '', email: '', role: 'cashier', joiningDate: '', status: 'active', branch: '' });
+      }
+    });
   }
 
   return (
@@ -22,6 +29,7 @@ export default function Staff() {
         { key: 'name', label: 'Name' },
         { key: 'mobile', label: 'Mobile' },
         { key: 'email', label: 'Email' },
+        { key: 'branch', label: 'Branch', render: (row) => row.branch?.name || 'All / HQ' },
         { key: 'role', label: 'Role', render: (row) => roleLabel(row.role) },
         { key: 'joiningDate', label: 'Joining Date', render: (row) => dateTime(row.joiningDate) },
         { key: 'status', label: 'Status' }
@@ -32,8 +40,12 @@ export default function Staff() {
           <input className="input" placeholder="Mobile" value={form.mobile} onChange={(event) => setForm({ ...form, mobile: event.target.value })} />
           <input className="input" placeholder="Email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
           <select className="input" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>{roles.map((role) => <option key={role} value={role}>{roleLabel(role)}</option>)}</select>
+          <select className="input" value={form.branch} onChange={(event) => setForm({ ...form, branch: event.target.value })}>
+            <option value="">All / HQ (no branch)</option>
+            {branches.map((branch) => <option key={branch._id} value={branch._id}>{branch.name}</option>)}
+          </select>
           <input className="input" type="date" value={form.joiningDate} onChange={(event) => setForm({ ...form, joiningDate: event.target.value })} />
-          <button className="btn-primary">Save Employee</button>
+          <button className="btn-primary sm:col-span-2">Save Employee</button>
         </form>
       </Modal>
     </>

@@ -1,4 +1,9 @@
 import mongoose from 'mongoose';
+import { TENANT_FEATURE_KEYS } from '../config/tenantFeatures.js';
+
+const featureFields = Object.fromEntries(
+  TENANT_FEATURE_KEYS.map((key) => [key, { type: Boolean, default: true }])
+);
 
 const tenantSchema = new mongoose.Schema(
   {
@@ -9,7 +14,11 @@ const tenantSchema = new mongoose.Schema(
     mobile: { type: String, trim: true },
     address: String,
     gstNumber: String,
-    status: { type: String, enum: ['active', 'inactive'], default: 'active' }
+    status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    features: {
+      type: new mongoose.Schema(featureFields, { _id: false }),
+      default: () => Object.fromEntries(TENANT_FEATURE_KEYS.map((key) => [key, true]))
+    }
   },
   { timestamps: true }
 );

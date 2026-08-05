@@ -1,3 +1,4 @@
+import { Branch } from '../models/Branch.js';
 import { Bill } from '../models/Bill.js';
 import { Customer } from '../models/Customer.js';
 import { Expense } from '../models/Expense.js';
@@ -20,6 +21,7 @@ import { ROLES } from '../config/roles.js';
 
 export async function clearBusinessData() {
   await Promise.all([
+    Branch.deleteMany({}),
     Bill.deleteMany({}),
     Customer.deleteMany({}),
     Expense.deleteMany({}),

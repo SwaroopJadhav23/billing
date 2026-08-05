@@ -10,12 +10,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+function clearSession() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+}
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+    const status = error.response?.status;
+    const message = error.response?.data?.message || '';
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    const inactiveAccount = status === 403 && /inactive/i.test(message);
+    // Don't wipe/redirect on login form errors — show the message instead
+    if (!isLoginRequest && (status === 401 || inactiveAccount)) {
+      clearSession();
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/forgot') && !window.location.pathname.startsWith('/reset') && window.location.pathname !== '/') {
+        window.location.replace('/');
+      }
     }
     return Promise.reject(error);
   }

@@ -49,6 +49,7 @@ async function seedCafe() {
     email: 'cafe@volmier.test',
     mobile: '9000000004',
     password: '123456',
+    loginPassword: '123456',
     role: ROLES.MANAGER,
     tenant: tenant._id,
     status: 'active'

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { ApiError } from '../utils/apiError.js';
+import { assertTenantActive } from '../utils/assertTenantActive.js';
 import { User } from '../models/User.js';
 
 export async function protect(req, res, next) {
@@ -11,6 +12,7 @@ export async function protect(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select('-password');
     if (!user || user.status !== 'active') throw new ApiError(401, 'Invalid session');
+    await assertTenantActive(user, { statusCode: 401 });
     req.user = user;
     next();
   } catch (error) {

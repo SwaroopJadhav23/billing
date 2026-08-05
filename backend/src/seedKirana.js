@@ -48,6 +48,7 @@ async function seedKirana() {
     email: 'kirana@volmier.test',
     mobile: '9000000001',
     password: '123456',
+    loginPassword: '123456',
     role: ROLES.MANAGER,
     tenant: tenant._id,
     status: 'active'

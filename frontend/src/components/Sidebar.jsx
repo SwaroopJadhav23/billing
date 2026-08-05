@@ -1,10 +1,10 @@
 import { NavLink } from 'react-router-dom';
-import { BarChart3, Building2, ChefHat, ClipboardList, LayoutDashboard, Package, ReceiptText, Settings, ShoppingCart, Table2, Users, WalletCards, X } from 'lucide-react';
+import { BarChart3, Building2, ChefHat, ClipboardList, GitBranch, LayoutDashboard, Package, ReceiptText, Settings, ShoppingCart, Table2, Users, WalletCards, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { ROLES, routePermissions } from '../routes/permissions';
+import { canAccessRoute, ROLES } from '../routes/permissions';
 
 const storeNavItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/pos', label: 'Billing POS', icon: ShoppingCart },
   { path: '/tables', label: 'Tables', icon: Table2 },
   { path: '/orders', label: 'Orders', icon: ClipboardList },
@@ -12,6 +12,7 @@ const storeNavItems = [
   { path: '/customers', label: 'Customers', icon: Users },
   { path: '/inventory', label: 'Inventory', icon: Package },
   { path: '/staff', label: 'Staff', icon: Users },
+  { path: '/branches', label: 'Branches', icon: GitBranch },
   { path: '/expenses', label: 'Expenses', icon: WalletCards },
   { path: '/reports', label: 'Reports', icon: BarChart3 },
   { path: '/settings', label: 'Settings', icon: Settings }
@@ -24,7 +25,7 @@ const superAdminNavItems = [
 export default function Sidebar({ open, onClose }) {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
-  const items = (isSuperAdmin ? superAdminNavItems : storeNavItems).filter((item) => routePermissions[item.path]?.includes(user?.role));
+  const items = (isSuperAdmin ? superAdminNavItems : storeNavItems).filter((item) => canAccessRoute(item.path, user?.role, user?.features));
 
   return (
     <>
@@ -45,7 +46,7 @@ export default function Sidebar({ open, onClose }) {
             <NavLink
               key={path}
               to={path}
-              end={path === '/'}
+              end={path === '/dashboard' || path === '/super-admin'}
               onClick={onClose}
               className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${isActive ? 'bg-brand-50 text-brand-700 dark:bg-orange-950/40 dark:text-orange-200' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900'}`}
             >

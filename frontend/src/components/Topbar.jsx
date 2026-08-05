@@ -1,4 +1,5 @@
 import { LogOut, Menu, Moon, Sun } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { roleLabel } from '../utils/format';
@@ -6,6 +7,12 @@ import { roleLabel } from '../utils/format';
 export default function Topbar({ onMenu }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate('/', { replace: true });
+  }
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50/85 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85 md:px-6 lg:px-8">
@@ -21,7 +28,7 @@ export default function Topbar({ onMenu }) {
             <p className="font-bold">{user?.name || 'User'}</p>
             <p className="text-xs text-slate-500">{roleLabel(user?.role)}</p>
           </div>
-          <button className="btn-muted" onClick={logout}><LogOut size={18} /></button>
+          <button className="btn-muted" onClick={handleLogout} title="Logout"><LogOut size={18} /></button>
         </div>
       </div>
     </header>

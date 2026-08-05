@@ -98,7 +98,7 @@ export default function Menu() {
             )
           }
         ]}
-        actions={<button className="btn-primary" onClick={openAdd}>Add Food Item</button>}
+        actions={<button className="btn-primary" onClick={openAdd}>Add Item</button>}
       />
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((item) => (
@@ -114,7 +114,7 @@ export default function Menu() {
           </div>
         ))}
       </div>
-      <Modal title={editingItem ? 'Edit Food Item' : 'Add Food Item'} open={open} onClose={closeModal}>
+      <Modal title={editingItem ? 'Edit Item' : 'Add Item'} open={open} onClose={closeModal}>
         <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
           <input className="input" placeholder="Name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
           <input className="input" list="menu-category-options" placeholder="Category" value={form.categoryName} onChange={(event) => setForm({ ...form, categoryName: event.target.value })} required />

@@ -1,3 +1,5 @@
+import { ROUTE_FEATURE_MAP, hasFeature } from '../config/tenantFeatures';
+
 export const ROLES = {
   SUPER_ADMIN: 'super_admin',
   MANAGER: 'manager',
@@ -10,7 +12,7 @@ export const ROLES = {
 export const routePermissions = {
   '/super-admin': [ROLES.SUPER_ADMIN],
   '/super-admin/tenants/:id': [ROLES.SUPER_ADMIN],
-  '/': [ROLES.MANAGER],
+  '/dashboard': [ROLES.MANAGER],
   '/pos': [ROLES.MANAGER, ROLES.CASHIER, ROLES.WAITER],
   '/tables': [ROLES.MANAGER, ROLES.WAITER],
   '/orders': [ROLES.MANAGER, ROLES.CASHIER, ROLES.WAITER],
@@ -18,19 +20,29 @@ export const routePermissions = {
   '/customers': [ROLES.MANAGER, ROLES.CASHIER],
   '/inventory': [ROLES.MANAGER],
   '/staff': [ROLES.MANAGER],
+  '/branches': [ROLES.MANAGER],
   '/expenses': [ROLES.MANAGER],
   '/reports': [ROLES.MANAGER],
   '/settings': [ROLES.MANAGER]
 };
 
-export function canAccessRoute(pathname, role) {
+const STORE_HOME_FALLBACKS = ['/pos', '/dashboard', '/menu', '/orders', '/customers', '/inventory', '/tables', '/staff', '/branches', '/expenses', '/reports', '/settings'];
+
+export function canAccessRoute(pathname, role, features) {
   if (!role) return false;
   if (pathname.startsWith('/super-admin/tenants/')) {
     return routePermissions['/super-admin/tenants/:id']?.includes(role);
   }
-  return routePermissions[pathname]?.includes(role);
+  if (!routePermissions[pathname]?.includes(role)) return false;
+  const featureKey = ROUTE_FEATURE_MAP[pathname];
+  if (role !== ROLES.SUPER_ADMIN && featureKey && !hasFeature(features, featureKey)) return false;
+  return true;
 }
 
-export function homePathForRole(role) {
-  return role === ROLES.SUPER_ADMIN ? '/super-admin' : '/pos';
+export function homePathForRole(role, features) {
+  if (role === ROLES.SUPER_ADMIN) return '/super-admin';
+  for (const path of STORE_HOME_FALLBACKS) {
+    if (canAccessRoute(path, role, features)) return path;
+  }
+  return '/pos';
 }
