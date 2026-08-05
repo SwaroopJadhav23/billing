@@ -1,0 +1,33 @@
+{
+  "name": "restaurant-billing-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "seed": "node src/seed.js",
+    "seed:kirana": "node src/seedKirana.js",
+    "seed:bakery": "node src/seedBakery.js",
+    "seed:restaurant": "node src/seedRestaurant.js",
+    "seed:cafe": "node src/seedCafe.js",
+    "clear": "node src/clearData.js"
+  },
+  "dependencies": {
+    "bcryptjs": "latest",
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "express-rate-limit": "latest",
+    "helmet": "latest",
+    "joi": "latest",
+    "jsonwebtoken": "latest",
+    "mongoose": "latest",
+    "morgan": "latest",
+    "multer": "latest",
+    "socket.io": "latest"
+  },
+  "devDependencies": {
+    "nodemon": "latest"
+  }
+}

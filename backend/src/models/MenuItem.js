@@ -1,0 +1,22 @@
+import mongoose from 'mongoose';
+import { tenantRef } from './tenantRef.js';
+
+const menuItemSchema = new mongoose.Schema(
+  {
+    tenant: tenantRef,
+    name: { type: String, required: true, trim: true },
+    category: { type: mongoose.Schema.Types.ObjectId, ref: 'MenuCategory' },
+    categoryName: { type: String, required: true, trim: true },
+    description: String,
+    price: { type: Number, required: true, min: 0 },
+    gstPercentage: { type: Number, default: 5, min: 0 },
+    image: String,
+    isAvailable: { type: Boolean, default: true },
+    status: { type: String, enum: ['active', 'inactive'], default: 'active' }
+  },
+  { timestamps: true }
+);
+
+menuItemSchema.index({ name: 'text', categoryName: 'text' });
+
+export const MenuItem = mongoose.model('MenuItem', menuItemSchema);
