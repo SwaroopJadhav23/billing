@@ -155,18 +155,18 @@ export default function POS() {
       serviceCharge
     };
     const { data: order } = await api.post('/orders', orderPayload);
-    const { data: bill } = await api.post('/bills/generate', { order: order._id, paymentMode, paidAmount: totals.grandTotal, grandTotal: totals.grandTotal, restaurant: { name: 'Volmier Billing System' } });
+    const { data: bill } = await api.post('/bills/generate', { order: order._id, paymentMode, restaurant: { name: 'Volmier Billing System' } });
     printReceipt({
       ...bill,
       items: receiptItems,
       customerName: customer.name,
       customerMobile: customer.mobile,
-      subtotal: totals.subtotal,
-      gstTotal: totals.gstTotal,
-      discount: Number(discount || 0),
-      serviceCharge: Number(serviceCharge || 0),
-      grandTotal: totals.grandTotal,
-      paymentMode
+      subtotal: bill.subtotal,
+      gstTotal: bill.gstTotal,
+      discount: bill.discount,
+      serviceCharge: bill.serviceCharge,
+      grandTotal: bill.grandTotal,
+      paymentMode: bill.paymentMode
     });
     setCart([]);
     setCustomer({ name: '', mobile: '' });

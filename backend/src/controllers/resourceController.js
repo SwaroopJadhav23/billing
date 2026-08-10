@@ -2,6 +2,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ROLES } from '../config/roles.js';
 import { applyTenantFilter, withTenantOnCreate } from '../utils/tenantScope.js';
 import { ApiError } from '../utils/apiError.js';
+import { sanitizeQueryFilters } from '../utils/sanitizeQuery.js';
 
 export function resourceController(Model, options = {}) {
   const populate = options.populate || '';
@@ -9,16 +10,17 @@ export function resourceController(Model, options = {}) {
 
   return {
     list: asyncHandler(async (req, res) => {
-      const { search, status, page = 1, limit = 20, sort = '-createdAt', tenantId, ...filters } = req.query;
-      let query = { ...filters };
-      if (status) query.status = status;
+      const { search, status, page = 1, limit = 20, sort = '-createdAt', tenantId } = req.query;
+      let query = sanitizeQueryFilters(req.query);
+      if (status && typeof status === 'string' && !status.includes('$')) query.status = status;
       if (scoped) query = applyTenantFilter(req, query);
-      if (search && Model.schema.indexes().some(([idx]) => Object.values(idx).includes('text'))) {
+      if (search && typeof search === 'string' && Model.schema.indexes().some(([idx]) => Object.values(idx).includes('text'))) {
         query.$text = { $search: search };
       }
+      const safeSort = typeof sort === 'string' && !sort.includes('$') ? sort : '-createdAt';
       const skip = (Number(page) - 1) * Number(limit);
       const [items, total] = await Promise.all([
-        Model.find(query).populate(populate).sort(sort).skip(skip).limit(Number(limit)),
+        Model.find(query).populate(populate).sort(safeSort).skip(skip).limit(Math.min(Number(limit) || 20, 100)),
         Model.countDocuments(query)
       ]);
       res.json({ items, total, page: Number(page), pages: Math.ceil(total / Number(limit)) || 1 });

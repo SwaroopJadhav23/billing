@@ -84,8 +84,6 @@ export default function Tables() {
       await api.post('/bills/generate', {
         order: order._id,
         paymentMode,
-        paidAmount: billTotals.grandTotal,
-        grandTotal: billTotals.grandTotal,
         restaurant: { name: 'Volmier Billing System' }
       });
       window.print();

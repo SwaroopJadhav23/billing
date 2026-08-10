@@ -46,7 +46,6 @@ async function seedBakery() {
     email: 'bakery@volmier.test',
     mobile: '9000000002',
     password: '123456',
-    loginPassword: '123456',
     role: ROLES.MANAGER,
     tenant: tenant._id,
     status: 'active'

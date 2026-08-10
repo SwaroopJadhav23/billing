@@ -22,55 +22,53 @@ function AdminCredentialCard({ admin, tenantId, onUpdated }) {
   const [editing, setEditing] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(true);
+  const [oneTimePassword, setOneTimePassword] = useState('');
 
   const savePassword = useMutation({
-    mutationFn: async (nextPassword) => (
-      await api.patch(`/tenants/${tenantId}/admins/${admin._id}/password`, { password: nextPassword })
+    mutationFn: async (payload) => (
+      await api.patch(`/tenants/${tenantId}/admins/${admin._id}/password`, payload)
     ).data,
-    onSuccess: () => {
+    onSuccess: (data) => {
       setEditing(false);
       setPassword('');
       setError('');
+      if (data.temporaryPassword) setOneTimePassword(data.temporaryPassword);
       onUpdated?.();
     },
     onError: (err) => setError(err.response?.data?.message || 'Unable to update password')
   });
 
   const loginId = admin.loginId || admin.email || '-';
-  const storedPassword = admin.password || admin.loginPassword || null;
 
   return (
     <div className="min-w-[300px] flex-1 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
       <p className="font-bold">{admin.name || '-'}</p>
       <div className="mt-3 space-y-2 text-sm">
-        <div className="flex items-start justify-between gap-2 rounded-xl bg-white px-3 py-2 dark:bg-slate-900">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Login ID</p>
-            <p className="font-semibold break-all">{loginId}</p>
-          </div>
+        <div className="rounded-xl bg-white px-3 py-2 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Login ID</p>
+          <p className="font-semibold break-all">{loginId}</p>
         </div>
         <div className="rounded-xl bg-white px-3 py-2 dark:bg-slate-900">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Password</p>
-            {storedPassword && (
-              <button type="button" className="text-xs font-semibold text-brand-700" onClick={() => setShowPassword((value) => !value)}>
-                {showPassword ? 'Hide' : 'Show'}
-              </button>
-            )}
-          </div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Password</p>
+          <p className="mt-1 font-semibold">—</p>
+          <p className="mt-1 text-xs text-slate-500">Never stored or shown. Reset or generate a temporary password.</p>
+          {oneTimePassword && (
+            <div className="mt-2 rounded-xl bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+              Temporary password (copy now): <span className="font-black">{oneTimePassword}</span>
+            </div>
+          )}
           {editing ? (
             <form
               className="mt-2 flex flex-col gap-2"
               onSubmit={(event) => {
                 event.preventDefault();
                 setError('');
-                savePassword.mutate(password);
+                savePassword.mutate({ password });
               }}
             >
               <input
                 className="input"
-                type="text"
+                type="password"
                 placeholder="New password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -79,15 +77,24 @@ function AdminCredentialCard({ admin, tenantId, onUpdated }) {
               />
               {error && <p className="text-xs text-red-600">{error}</p>}
               <div className="flex gap-2">
-                <button className="btn-primary" disabled={savePassword.isPending}>{savePassword.isPending ? 'Saving...' : 'Save'}</button>
+                <button className="btn-primary" disabled={savePassword.isPending}>Save</button>
                 <button type="button" className="btn-muted" onClick={() => { setEditing(false); setError(''); setPassword(''); }}>Cancel</button>
               </div>
             </form>
           ) : (
-            <div className="mt-1 flex items-center justify-between gap-2">
-              <p className="font-semibold break-all">{storedPassword ? (showPassword ? storedPassword : '••••••••') : 'Not saved yet'}</p>
-              <button type="button" className="btn-muted shrink-0" onClick={() => setEditing(true)}>
-                {storedPassword ? 'Change' : 'Set password'}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" className="btn-muted" onClick={() => setEditing(true)}>Reset Password</button>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={savePassword.isPending}
+                onClick={() => {
+                  setError('');
+                  setOneTimePassword('');
+                  savePassword.mutate({ generate: true });
+                }}
+              >
+                Generate Temporary Password
               </button>
             </div>
           )}
@@ -236,6 +243,11 @@ export default function TenantDetail() {
 
           <div className="card space-y-4 p-5">
             <h3 className="text-lg font-black">Store admins</h3>
+            {(data.passwordResetRequests || []).length > 0 && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                Pending password reset requests: {data.passwordResetRequests.length}. Use Generate Temporary Password below.
+              </div>
+            )}
             {admins.length === 0 ? (
               <p className="text-sm text-slate-500">No store admins found.</p>
             ) : (

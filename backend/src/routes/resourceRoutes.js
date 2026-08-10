@@ -1,12 +1,14 @@
 import express from 'express';
 import { resourceController } from '../controllers/resourceController.js';
 import { protect, allowRoles } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/requireFeature.js';
 import { ROLES } from '../config/roles.js';
 
 export function crudRoutes(Model, roles = Object.values(ROLES), options = {}) {
   const router = express.Router();
   const controller = resourceController(Model, options);
   router.use(protect);
+  if (options.feature) router.use(requireFeature(options.feature));
   router.get('/', allowRoles(...roles), controller.list);
   router.post('/', allowRoles(...roles), controller.create);
   router.get('/:id', allowRoles(...roles), controller.get);

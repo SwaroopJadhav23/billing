@@ -11,6 +11,7 @@
     "seed:bakery": "node src/seedBakery.js",
     "seed:restaurant": "node src/seedRestaurant.js",
     "seed:cafe": "node src/seedCafe.js",
+    "migrate:security": "node src/migrateRemoveLoginPassword.js",
     "clear": "node src/clearData.js"
   },
   "dependencies": {

@@ -44,11 +44,14 @@ export default function Tenants() {
       const { data: result } = await api.post('/tenants', payload);
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       setOpen(false);
       setForm(emptyForm);
       setError('');
+      if (result?.temporaryPassword) {
+        window.alert(`Client created.\nLogin: ${result.admin?.email}\nTemporary password (copy now): ${result.temporaryPassword}`);
+      }
     },
     onError: (err) => setError(err.response?.data?.message || 'Unable to create store')
   });

@@ -7,6 +7,7 @@ import { MenuItem } from '../models/MenuItem.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/apiError.js';
 import { ROLES } from '../config/roles.js';
+import { requireFeature } from '../middleware/requireFeature.js';
 import { applyTenantFilter, withTenantOnCreate } from '../utils/tenantScope.js';
 
 const router = express.Router();
@@ -18,6 +19,7 @@ const imageUrl = (req, file) => {
 };
 
 router.use(protect);
+router.use(requireFeature('menu'));
 
 router.get('/', allowRoles(...PERMISSIONS.menu), controller.list);
 router.get('/:id', allowRoles(...PERMISSIONS.menu), controller.get);

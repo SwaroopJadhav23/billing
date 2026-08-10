@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { ApiError } from '../utils/apiError.js';
 import { assertTenantActive } from '../utils/assertTenantActive.js';
+import { isAccessBlacklisted } from '../utils/tokens.js';
 import { User } from '../models/User.js';
 
 export async function protect(req, res, next) {
@@ -10,10 +11,14 @@ export async function protect(req, res, next) {
     if (!token) throw new ApiError(401, 'Authentication required');
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.type && decoded.type !== 'access') throw new ApiError(401, 'Invalid access token');
+    if (await isAccessBlacklisted(decoded.jti)) throw new ApiError(401, 'Session revoked');
+
     const user = await User.findById(decoded.id).select('-password');
     if (!user || user.status !== 'active') throw new ApiError(401, 'Invalid session');
     await assertTenantActive(user, { statusCode: 401 });
     req.user = user;
+    req.tokenPayload = decoded;
     next();
   } catch (error) {
     next(error.statusCode ? error : new ApiError(401, 'Invalid or expired token'));
