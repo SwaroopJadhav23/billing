@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { app } from './app.js';
-import { connectDB } from './config/db.js';
+import { connectDBWithRetry } from './config/db.js';
 import { User } from './models/User.js';
 
 const port = process.env.PORT || 5000;
@@ -17,7 +17,7 @@ const io = new Server(server, {
       if (!origin || allowedOrigins.includes(origin) || (process.env.NODE_ENV !== 'production' && /^http:\/\/localhost:\d+$/.test(origin))) {
         return callback(null, true);
       }
-      return callback(new Error('CORS blocked'));
+      return callback(null, false);
     },
     credentials: true
   }
@@ -54,14 +54,12 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-connectDB()
-  .then(() => {
-    server.listen(port, host, () => console.log(`API running on ${host}:${port}`));
-  })
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+server.listen(port, host, () => console.log(`API running on ${host}:${port}`));
+
+connectDBWithRetry().catch((error) => {
+  console.error('MongoDB unavailable after retries:', error.message);
+  // Keep HTTP process alive so /health and CORS preflights still respond.
+});
 
 server.on('error', (error) => {
   if (error.code === 'EADDRINUSE') {

@@ -135,6 +135,7 @@ export default function Tenants() {
             <option value="bakery">Bakery</option>
             <option value="restaurant">Restaurant</option>
             <option value="cafe">Cafe</option>
+            <option value="toy_shop">Toy Shop</option>
             <option value="other">Other</option>
           </select>
           <input className="input" placeholder="Owner name" value={form.ownerName} onChange={(event) => setForm({ ...form, ownerName: event.target.value })} />
