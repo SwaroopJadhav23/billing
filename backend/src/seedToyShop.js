@@ -23,6 +23,7 @@ const categories = [
   'Arts & Crafts'
 ];
 
+// Image IDs verified with HTTP 200 against images.unsplash.com
 const products = [
   {
     name: 'Superhero Action Figure',
@@ -46,7 +47,7 @@ const products = [
     description: 'Set of 6 colorful dinosaur figures',
     price: 649,
     gstPercentage: 12,
-    image: img('photo-1518709268805-4e9042af9f23')
+    image: img('photo-1545558014-8692077e9b5c')
   },
   {
     name: 'Soldier Commando Set',
@@ -54,7 +55,7 @@ const products = [
     description: 'Military action figure with gear',
     price: 549,
     gstPercentage: 12,
-    image: img('photo-1606107557195-0e29a4b5b4aa')
+    image: img('photo-1608889175250-c3b0c1667d3a')
   },
   {
     name: 'Family Ludo Set',
@@ -78,7 +79,7 @@ const products = [
     description: 'Classic snakes and ladders board',
     price: 199,
     gstPercentage: 12,
-    image: img('photo-1632509160375-b9ffba36b8c4')
+    image: img('photo-1553481187-be93c21490a9')
   },
   {
     name: 'UNO Card Pack',
@@ -86,7 +87,7 @@ const products = [
     description: 'Family card game for ages 7+',
     price: 179,
     gstPercentage: 12,
-    image: img('photo-1606503153255-59d8b8e3e79d')
+    image: img('photo-1608889825205-eebdb9fc5806')
   },
   {
     name: 'Teddy Bear Soft Toy',
@@ -102,7 +103,7 @@ const products = [
     description: 'Soft cuddle pillow toy',
     price: 349,
     gstPercentage: 12,
-    image: img('photo-1530325553241-4f6e748286b6')
+    image: img('photo-1515488042361-ee00e0ddd4e4')
   },
   {
     name: 'Panda Hug Buddy',
@@ -134,7 +135,7 @@ const products = [
     description: '1-20 number puzzle for kids',
     price: 299,
     gstPercentage: 5,
-    image: img('photo-1503454537195-1dcabb73ffb9')
+    image: img('photo-1606092195730-5d7b9af1efc5')
   },
   {
     name: 'STEM Science Kit',
@@ -150,7 +151,7 @@ const products = [
     description: '100-piece kids world map puzzle',
     price: 349,
     gstPercentage: 5,
-    image: img('photo-1606092195730-5d7b9af1efc5')
+    image: img('photo-1621839673705-6617adf9e890')
   },
   {
     name: 'Kids Cricket Bat Set',
@@ -158,7 +159,7 @@ const products = [
     description: 'Bat with 3 plastic balls',
     price: 550,
     gstPercentage: 12,
-    image: img('photo-1531415072799-95ed2bd47964')
+    image: img('photo-1574629810360-7efbbe195018')
   },
   {
     name: 'Frisbee Disc',
@@ -182,7 +183,7 @@ const products = [
     description: 'Adjustable kids skipping rope',
     price: 129,
     gstPercentage: 12,
-    image: img('photo-1518611012118-696072aa579a')
+    image: img('photo-1575361204480-aadea25e6e68')
   },
   {
     name: 'Remote Control Car',
@@ -190,7 +191,7 @@ const products = [
     description: 'Rechargeable RC car with remote',
     price: 1299,
     gstPercentage: 18,
-    image: img('photo-1594787318284-d574e8c3e2a0')
+    image: img('photo-1581235720704-06d3acfcb36f')
   },
   {
     name: 'Die-Cast Race Cars Pack',
@@ -198,7 +199,7 @@ const products = [
     description: 'Set of 5 metal race cars',
     price: 599,
     gstPercentage: 12,
-    image: img('photo-1449960238630-7bb5e7079c84')
+    image: img('photo-1558060370-d644479cb6f7')
   },
   {
     name: 'Toy Train Set',
@@ -206,7 +207,7 @@ const products = [
     description: 'Electric train with track loop',
     price: 1499,
     gstPercentage: 18,
-    image: img('photo-1474487548417-781cb71495f3')
+    image: img('photo-1596464716127-f2a82984de30')
   },
   {
     name: 'Push Scooter Mini',
@@ -214,7 +215,7 @@ const products = [
     description: '3-wheel kids scooter',
     price: 1899,
     gstPercentage: 18,
-    image: img('photo-1571068316344-75bc76f77890')
+    image: img('photo-1558618666-fcd25c85cd64')
   },
   {
     name: 'Colouring Book Combo',
