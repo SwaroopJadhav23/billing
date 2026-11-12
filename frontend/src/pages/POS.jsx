@@ -246,11 +246,11 @@ export default function POS() {
 
   return (
     <>
-      <div className={`grid w-full min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)] ${cart.length ? 'pb-28 xl:pb-0' : ''}`}>
-        <section className="space-y-4">
-          <div className="card">
-            <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex min-w-0 flex-nowrap gap-2 overflow-x-auto pb-1">
+      <div className={`mx-auto w-full max-w-full min-w-0 overflow-x-hidden xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(340px,400px)] xl:gap-6 ${cart.length ? 'pb-28 xl:pb-0' : ''}`}>
+        <section className="min-w-0 max-w-full space-y-3">
+          <div className="card !p-3 sm:!p-5">
+            <div className="flex min-w-0 flex-col gap-3">
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {categories.map((name) => (
                   <button
                     key={name}
@@ -262,29 +262,44 @@ export default function POS() {
                   </button>
                 ))}
               </div>
-              <label className="relative w-full shrink-0 xl:w-72">
+              <label className="relative w-full min-w-0">
                 <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input className="input" style={{ paddingLeft: '2.75rem' }} placeholder="Search menu item" value={search} onChange={(event) => setSearch(event.target.value)} />
               </label>
             </div>
           </div>
-          <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+
+          {/* Mobile: vertical list. Desktop/tablet: product grid. Cart never sits beside items on phone. */}
+          <div className="flex min-w-0 max-w-full flex-col gap-3 md:grid md:grid-cols-2 md:gap-4 2xl:grid-cols-3">
             {visibleItems.map((item) => (
-              <button key={item._id} type="button" onClick={() => addItem(item)} className="card text-left transition hover:-translate-y-1">
-                {item.image ? (
-                  <img src={item.image} alt={item.name} className="mb-3 h-24 w-full rounded-2xl object-cover sm:mb-4 sm:h-28 sm:rounded-3xl" />
-                ) : (
-                  <div className="mb-3 h-24 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-50 sm:mb-4 sm:h-28 sm:rounded-3xl dark:from-orange-950 dark:to-slate-900" />
-                )}
-                <p className="line-clamp-2 text-sm font-black sm:text-base">{item.name}</p>
-                <p className="text-xs text-slate-500 sm:text-sm">{item.categoryName}</p>
-                <p className="mt-2 text-base font-black text-brand-600 sm:mt-3 sm:text-lg">{currency(item.price)}</p>
+              <button
+                key={item._id}
+                type="button"
+                onClick={() => addItem(item)}
+                className="card !p-3 text-left transition active:scale-[0.99] md:!p-5 md:hover:-translate-y-1"
+              >
+                <div className="flex min-w-0 items-center gap-3 md:block">
+                  {item.image ? (
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="h-16 w-16 shrink-0 rounded-2xl object-cover md:mb-4 md:h-28 md:w-full md:rounded-3xl"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 shrink-0 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-50 md:mb-4 md:h-28 md:w-full md:rounded-3xl dark:from-orange-950 dark:to-slate-900" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-black md:line-clamp-2 md:whitespace-normal md:text-base">{item.name}</p>
+                    <p className="text-xs text-slate-500 md:text-sm">{item.categoryName}</p>
+                    <p className="mt-1 text-base font-black text-brand-600 md:mt-3 md:text-lg">{currency(item.price)}</p>
+                  </div>
+                </div>
               </button>
             ))}
           </div>
         </section>
 
-        <aside className="card sticky top-24 hidden h-fit xl:block">
+        <aside className="card sticky top-24 mt-6 hidden h-fit xl:mt-0 xl:block">
           {billPanel}
         </aside>
       </div>
