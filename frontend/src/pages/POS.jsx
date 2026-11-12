@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search, Trash2 } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useResource } from '../hooks/useResource';
 import { api } from '../services/api';
 import { currency } from '../utils/format';
@@ -13,6 +13,7 @@ export default function POS() {
   const [paymentMode, setPaymentMode] = useState('cash');
   const [customer, setCustomer] = useState({ name: '', mobile: '' });
   const [savingBill, setSavingBill] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const { items } = useResource('menu-items', { limit: 100 });
   const categories = useMemo(
     () => ['All', ...Array.from(new Set(items.map((item) => item.categoryName).filter(Boolean)))],
@@ -20,6 +21,7 @@ export default function POS() {
   );
 
   const visibleItems = items.filter((item) => (category === 'All' || item.categoryName === category) && item.name.toLowerCase().includes(search.toLowerCase()) && item.isAvailable);
+  const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
   const totals = useMemo(() => {
     const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const gstTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity * (item.gstPercentage || 0)) / 100, 0);
@@ -177,85 +179,140 @@ export default function POS() {
       });
       setCart([]);
       setCustomer({ name: '', mobile: '' });
+      setCartOpen(false);
     } finally {
       setSavingBill(false);
     }
   }
 
+  const billPanel = (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-xl font-black">Current Bill</h2>
+        <button
+          type="button"
+          className="rounded-2xl bg-slate-100 p-2 text-slate-600 xl:hidden dark:bg-slate-800 dark:text-slate-300"
+          onClick={() => setCartOpen(false)}
+          aria-label="Close cart"
+        >
+          <X size={18} />
+        </button>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <input className="input" placeholder="Customer name" value={customer.name} onChange={(event) => setCustomer({ ...customer, name: event.target.value })} />
+        <input className="input" placeholder="Mobile" value={customer.mobile} onChange={(event) => setCustomer({ ...customer, mobile: event.target.value })} />
+      </div>
+      <div className="mt-5 max-h-[40vh] space-y-3 overflow-auto xl:max-h-80">
+        {cart.length === 0 && <p className="rounded-2xl bg-slate-50 p-4 text-center text-sm text-slate-500 dark:bg-slate-800">Add items to start billing</p>}
+        {cart.map((item) => (
+          <div key={item._id} className="rounded-2xl border border-slate-100 p-3 dark:border-slate-800">
+            <div className="flex justify-between gap-3">
+              <div>
+                <p className="font-bold">{item.name}</p>
+                <p className="text-sm text-slate-500">{currency(item.price)}</p>
+              </div>
+              <button type="button" onClick={() => setCart(cart.filter((line) => line._id !== item._id))}><Trash2 size={18} /></button>
+            </div>
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button type="button" className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-3xl font-black leading-none text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => updateQty(item._id, -1)}>-</button>
+                <span className="font-black">{item.quantity}</span>
+                <button type="button" className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-3xl font-black leading-none text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => updateQty(item._id, 1)}>+</button>
+              </div>
+              <p className="font-black">{currency(item.price * item.quantity)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 space-y-3 border-t border-slate-200 pt-5 text-sm dark:border-slate-800">
+        <div className="flex justify-between"><span>Subtotal</span><b>{currency(totals.subtotal)}</b></div>
+        <div className="flex justify-between"><span>GST</span><b>{currency(totals.gstTotal)}</b></div>
+        <div className="grid grid-cols-2 gap-3">
+          <input className="input" type="number" placeholder="Discount" value={discount} onChange={(event) => setDiscount(event.target.value)} />
+          <input className="input" type="number" placeholder="Service charge" value={serviceCharge} onChange={(event) => setServiceCharge(event.target.value)} />
+        </div>
+        <select className="input" value={paymentMode} onChange={(event) => setPaymentMode(event.target.value)}>
+          <option value="cash">Cash</option>
+          <option value="upi">UPI</option>
+          <option value="card">Card</option>
+        </select>
+        <div className="flex justify-between text-xl"><span>Grand Total</span><b>{currency(totals.grandTotal)}</b></div>
+        <button type="button" className="btn-primary w-full" disabled={!cart.length || savingBill} onClick={saveBill}>
+          {savingBill ? 'Saving & Printing...' : 'Save & Print Bill'}
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <>
-      <div className="grid w-full min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
+      <div className={`grid w-full min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)] ${cart.length ? 'pb-28 xl:pb-0' : ''}`}>
         <section className="space-y-4">
-        <div className="card">
-          <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex min-w-0 flex-wrap gap-2">
-              {categories.map((name) => <button key={name} className={category === name ? 'btn-primary whitespace-nowrap' : 'btn-muted whitespace-nowrap'} onClick={() => setCategory(name)}>{name}</button>)}
+          <div className="card">
+            <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex min-w-0 flex-nowrap gap-2 overflow-x-auto pb-1">
+                {categories.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className={`${category === name ? 'btn-primary' : 'btn-muted'} shrink-0 whitespace-nowrap`}
+                    onClick={() => setCategory(name)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+              <label className="relative w-full shrink-0 xl:w-72">
+                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input className="input" style={{ paddingLeft: '2.75rem' }} placeholder="Search menu item" value={search} onChange={(event) => setSearch(event.target.value)} />
+              </label>
             </div>
-            <label className="relative w-full shrink-0 xl:w-72">
-              <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input className="input" style={{ paddingLeft: '2.75rem' }} placeholder="Search menu item" value={search} onChange={(event) => setSearch(event.target.value)} />
-            </label>
           </div>
-        </div>
-        <div className="grid min-w-0 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-          {visibleItems.map((item) => (
-            <button key={item._id} onClick={() => addItem(item)} className="card text-left transition hover:-translate-y-1">
-              {item.image ? (
-                <img src={item.image} alt={item.name} className="mb-4 h-28 w-full rounded-3xl object-cover" />
-              ) : (
-                <div className="mb-4 h-28 rounded-3xl bg-gradient-to-br from-orange-100 to-amber-50 dark:from-orange-950 dark:to-slate-900" />
-              )}
-              <p className="font-black">{item.name}</p>
-              <p className="text-sm text-slate-500">{item.categoryName}</p>
-              <p className="mt-3 text-lg font-black text-brand-600">{currency(item.price)}</p>
-            </button>
-          ))}
-        </div>
+          <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+            {visibleItems.map((item) => (
+              <button key={item._id} type="button" onClick={() => addItem(item)} className="card text-left transition hover:-translate-y-1">
+                {item.image ? (
+                  <img src={item.image} alt={item.name} className="mb-3 h-24 w-full rounded-2xl object-cover sm:mb-4 sm:h-28 sm:rounded-3xl" />
+                ) : (
+                  <div className="mb-3 h-24 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-50 sm:mb-4 sm:h-28 sm:rounded-3xl dark:from-orange-950 dark:to-slate-900" />
+                )}
+                <p className="line-clamp-2 text-sm font-black sm:text-base">{item.name}</p>
+                <p className="text-xs text-slate-500 sm:text-sm">{item.categoryName}</p>
+                <p className="mt-2 text-base font-black text-brand-600 sm:mt-3 sm:text-lg">{currency(item.price)}</p>
+              </button>
+            ))}
+          </div>
         </section>
-        <aside className="card sticky top-24 h-fit">
-        <h2 className="text-xl font-black">Current Bill</h2>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <input className="input" placeholder="Customer name" value={customer.name} onChange={(event) => setCustomer({ ...customer, name: event.target.value })} />
-          <input className="input" placeholder="Mobile" value={customer.mobile} onChange={(event) => setCustomer({ ...customer, mobile: event.target.value })} />
-        </div>
-        <div className="mt-5 max-h-80 space-y-3 overflow-auto">
-          {cart.length === 0 && <p className="rounded-2xl bg-slate-50 p-4 text-center text-sm text-slate-500 dark:bg-slate-800">Add items to start billing</p>}
-          {cart.map((item) => (
-            <div key={item._id} className="rounded-2xl border border-slate-100 p-3 dark:border-slate-800">
-              <div className="flex justify-between gap-3">
-                <div><p className="font-bold">{item.name}</p><p className="text-sm text-slate-500">{currency(item.price)}</p></div>
-                <button onClick={() => setCart(cart.filter((line) => line._id !== item._id))}><Trash2 size={18} /></button>
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <button className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-3xl font-black leading-none text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => updateQty(item._id, -1)}>-</button>
-                  <span className="font-black">{item.quantity}</span>
-                  <button className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-3xl font-black leading-none text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => updateQty(item._id, 1)}>+</button>
-                </div>
-                <p className="font-black">{currency(item.price * item.quantity)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-5 space-y-3 border-t border-slate-200 pt-5 text-sm dark:border-slate-800">
-          <div className="flex justify-between"><span>Subtotal</span><b>{currency(totals.subtotal)}</b></div>
-          <div className="flex justify-between"><span>GST</span><b>{currency(totals.gstTotal)}</b></div>
-          <div className="grid grid-cols-2 gap-3">
-            <input className="input" type="number" placeholder="Discount" value={discount} onChange={(event) => setDiscount(event.target.value)} />
-            <input className="input" type="number" placeholder="Service charge" value={serviceCharge} onChange={(event) => setServiceCharge(event.target.value)} />
-          </div>
-          <select className="input" value={paymentMode} onChange={(event) => setPaymentMode(event.target.value)}>
-            <option value="cash">Cash</option>
-            <option value="upi">UPI</option>
-            <option value="card">Card</option>
-          </select>
-          <div className="flex justify-between text-xl"><span>Grand Total</span><b>{currency(totals.grandTotal)}</b></div>
-          <button className="btn-primary w-full" disabled={!cart.length || savingBill} onClick={saveBill}>
-            {savingBill ? 'Saving & Printing...' : 'Save & Print Bill'}
-          </button>
-        </div>
+
+        <aside className="card sticky top-24 hidden h-fit xl:block">
+          {billPanel}
         </aside>
       </div>
+
+      {cart.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 backdrop-blur xl:hidden dark:border-slate-800 dark:bg-slate-950/95">
+          <button
+            type="button"
+            className="btn-primary flex w-full items-center justify-between gap-3"
+            onClick={() => setCartOpen(true)}
+          >
+            <span className="inline-flex items-center gap-2">
+              <ShoppingCart size={18} />
+              View Cart ({cartCount})
+            </span>
+            <span className="font-black">{currency(totals.grandTotal)}</span>
+          </button>
+        </div>
+      )}
+
+      {cartOpen && (
+        <div className="fixed inset-0 z-50 xl:hidden">
+          <button type="button" className="absolute inset-0 bg-slate-950/40" aria-label="Close cart overlay" onClick={() => setCartOpen(false)} />
+          <div className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-auto rounded-t-3xl bg-white p-4 shadow-2xl dark:bg-slate-950">
+            {billPanel}
+          </div>
+        </div>
+      )}
     </>
   );
 }
