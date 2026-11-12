@@ -12,6 +12,7 @@ export default function POS() {
   const [serviceCharge, setServiceCharge] = useState(0);
   const [paymentMode, setPaymentMode] = useState('cash');
   const [customer, setCustomer] = useState({ name: '', mobile: '' });
+  const [savingBill, setSavingBill] = useState(false);
   const { items } = useResource('menu-items', { limit: 100 });
   const categories = useMemo(
     () => ['All', ...Array.from(new Set(items.map((item) => item.categoryName).filter(Boolean)))],
@@ -49,127 +50,136 @@ export default function POS() {
   }
 
   function printReceipt(receipt) {
-    const itemRows = receipt.items.map((item) => `
-      <div class="row">
-        <span>${escapeHtml(item.name)}</span>
-        <span>${item.quantity}</span>
-        <span>${currency(Number(item.price || 0) * Number(item.quantity || 1))}</span>
-      </div>
-    `).join('');
+    return new Promise((resolve) => {
+      const itemRows = receipt.items.map((item) => `
+        <div class="row">
+          <span>${escapeHtml(item.name)}</span>
+          <span>${item.quantity}</span>
+          <span>${currency(Number(item.price || 0) * Number(item.quantity || 1))}</span>
+        </div>
+      `).join('');
 
-    const customerBlock = receipt.customerName || receipt.customerMobile ? `
-      <div class="section">
-        ${receipt.customerName ? `<p>Customer: ${escapeHtml(receipt.customerName)}</p>` : ''}
-        ${receipt.customerMobile ? `<p>Mobile: ${escapeHtml(receipt.customerMobile)}</p>` : ''}
-      </div>
-    ` : '';
+      const customerBlock = receipt.customerName || receipt.customerMobile ? `
+        <div class="section">
+          ${receipt.customerName ? `<p>Customer: ${escapeHtml(receipt.customerName)}</p>` : ''}
+          ${receipt.customerMobile ? `<p>Mobile: ${escapeHtml(receipt.customerMobile)}</p>` : ''}
+        </div>
+      ` : '';
 
-    const receiptHtml = `
-      <!doctype html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>Receipt</title>
-          <style>
-            @page { size: 80mm 120mm; margin: 0; }
-            * { box-sizing: border-box; }
-            html, body {
-              width: 80mm;
-              margin: 0;
-              padding: 0;
-              background: #fff;
-              color: #000;
-              font-family: "Courier New", monospace;
-              font-size: 11px;
-              line-height: 1.35;
-            }
-            body { padding: 4mm; }
-            h1 { margin: 0 0 4px; text-align: center; font-size: 16px; }
-            p { margin: 2px 0; }
-            .center { text-align: center; }
-            .section { border-top: 1px dashed #000; margin-top: 8px; padding-top: 8px; }
-            .row { display: grid; grid-template-columns: 1fr 28px 58px; gap: 4px; margin: 3px 0; }
-            .row span:last-child { text-align: right; }
-            .head, .total { font-weight: 700; }
-            .total { border-top: 1px dashed #000; margin-top: 6px; padding-top: 6px; font-size: 13px; }
-          </style>
-        </head>
-        <body>
-          <div class="center">
-            <h1>Volmier Billing System</h1>
-            <p>Receipt / Tax Invoice</p>
-            <p>Invoice: ${escapeHtml(receipt.invoiceNumber)}</p>
-            <p>${escapeHtml(new Date(receipt.createdAt || Date.now()).toLocaleString())}</p>
-          </div>
-          ${customerBlock}
-          <div class="section">
-            <div class="row head"><span>Item</span><span>Qty</span><span>Amt</span></div>
-            ${itemRows}
-          </div>
-          <div class="section">
-            <div class="row"><span>Subtotal</span><span></span><span>${currency(receipt.subtotal)}</span></div>
-            <div class="row"><span>GST</span><span></span><span>${currency(receipt.gstTotal)}</span></div>
-            <div class="row"><span>Discount</span><span></span><span>${currency(receipt.discount)}</span></div>
-            <div class="row"><span>Service</span><span></span><span>${currency(receipt.serviceCharge)}</span></div>
-            <div class="row total"><span>Total</span><span></span><span>${currency(receipt.grandTotal)}</span></div>
-            <div class="row"><span>Payment</span><span></span><span>${escapeHtml(receipt.paymentMode.toUpperCase())}</span></div>
-          </div>
-          <div class="center section"><p>Thank you, visit again!</p></div>
-        </body>
-      </html>
-    `;
+      const receiptHtml = `
+        <!doctype html>
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <title>Receipt</title>
+            <style>
+              @page { size: 80mm 120mm; margin: 0; }
+              * { box-sizing: border-box; }
+              html, body {
+                width: 80mm;
+                margin: 0;
+                padding: 0;
+                background: #fff;
+                color: #000;
+                font-family: "Courier New", monospace;
+                font-size: 11px;
+                line-height: 1.35;
+              }
+              body { padding: 4mm; }
+              h1 { margin: 0 0 4px; text-align: center; font-size: 16px; }
+              p { margin: 2px 0; }
+              .center { text-align: center; }
+              .section { border-top: 1px dashed #000; margin-top: 8px; padding-top: 8px; }
+              .row { display: grid; grid-template-columns: 1fr 28px 58px; gap: 4px; margin: 3px 0; }
+              .row span:last-child { text-align: right; }
+              .head, .total { font-weight: 700; }
+              .total { border-top: 1px dashed #000; margin-top: 6px; padding-top: 6px; font-size: 13px; }
+            </style>
+          </head>
+          <body>
+            <div class="center">
+              <h1>Volmier Billing System</h1>
+              <p>Receipt / Tax Invoice</p>
+              <p>Invoice: ${escapeHtml(receipt.invoiceNumber)}</p>
+              <p>${escapeHtml(new Date(receipt.createdAt || Date.now()).toLocaleString())}</p>
+            </div>
+            ${customerBlock}
+            <div class="section">
+              <div class="row head"><span>Item</span><span>Qty</span><span>Amt</span></div>
+              ${itemRows}
+            </div>
+            <div class="section">
+              <div class="row"><span>Subtotal</span><span></span><span>${currency(receipt.subtotal)}</span></div>
+              <div class="row"><span>GST</span><span></span><span>${currency(receipt.gstTotal)}</span></div>
+              <div class="row"><span>Discount</span><span></span><span>${currency(receipt.discount)}</span></div>
+              <div class="row"><span>Service</span><span></span><span>${currency(receipt.serviceCharge)}</span></div>
+              <div class="row total"><span>Total</span><span></span><span>${currency(receipt.grandTotal)}</span></div>
+              <div class="row"><span>Payment</span><span></span><span>${escapeHtml(receipt.paymentMode.toUpperCase())}</span></div>
+            </div>
+            <div class="center section"><p>Thank you, visit again!</p></div>
+          </body>
+        </html>
+      `;
 
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
 
-    const printWindow = iframe.contentWindow;
-    printWindow.document.open();
-    printWindow.document.write(receiptHtml);
-    printWindow.document.close();
+      const printWindow = iframe.contentWindow;
+      printWindow.document.open();
+      printWindow.document.write(receiptHtml);
+      printWindow.document.close();
 
-    setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-      setTimeout(() => iframe.remove(), 500);
-    }, 100);
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        resolve();
+        setTimeout(() => iframe.remove(), 500);
+      }, 100);
+    });
   }
 
   async function saveBill() {
-    const receiptItems = cart.map((item) => ({
-      name: item.name,
-      price: item.price,
-      gstPercentage: item.gstPercentage,
-      quantity: item.quantity
-    }));
-    const orderPayload = {
-      type: 'takeaway',
-      customer: undefined,
-      items: cart.map((item) => ({ menuItem: item._id, name: item.name, price: item.price, gstPercentage: item.gstPercentage, quantity: item.quantity })),
-      discount,
-      serviceCharge
-    };
-    const { data: order } = await api.post('/orders', orderPayload);
-    const { data: bill } = await api.post('/bills/generate', { order: order._id, paymentMode, restaurant: { name: 'Volmier Billing System' } });
-    printReceipt({
-      ...bill,
-      items: receiptItems,
-      customerName: customer.name,
-      customerMobile: customer.mobile,
-      subtotal: bill.subtotal,
-      gstTotal: bill.gstTotal,
-      discount: bill.discount,
-      serviceCharge: bill.serviceCharge,
-      grandTotal: bill.grandTotal,
-      paymentMode: bill.paymentMode
-    });
-    setCart([]);
-    setCustomer({ name: '', mobile: '' });
+    if (!cart.length || savingBill) return;
+    setSavingBill(true);
+    try {
+      const receiptItems = cart.map((item) => ({
+        name: item.name,
+        price: item.price,
+        gstPercentage: item.gstPercentage,
+        quantity: item.quantity
+      }));
+      const orderPayload = {
+        type: 'takeaway',
+        customer: undefined,
+        items: cart.map((item) => ({ menuItem: item._id, name: item.name, price: item.price, gstPercentage: item.gstPercentage, quantity: item.quantity })),
+        discount,
+        serviceCharge
+      };
+      const { data: order } = await api.post('/orders', orderPayload);
+      const { data: bill } = await api.post('/bills/generate', { order: order._id, paymentMode, restaurant: { name: 'Volmier Billing System' } });
+      await printReceipt({
+        ...bill,
+        items: receiptItems,
+        customerName: customer.name,
+        customerMobile: customer.mobile,
+        subtotal: bill.subtotal,
+        gstTotal: bill.gstTotal,
+        discount: bill.discount,
+        serviceCharge: bill.serviceCharge,
+        grandTotal: bill.grandTotal,
+        paymentMode: bill.paymentMode
+      });
+      setCart([]);
+      setCustomer({ name: '', mobile: '' });
+    } finally {
+      setSavingBill(false);
+    }
   }
 
   return (
@@ -240,7 +250,9 @@ export default function POS() {
             <option value="card">Card</option>
           </select>
           <div className="flex justify-between text-xl"><span>Grand Total</span><b>{currency(totals.grandTotal)}</b></div>
-          <button className="btn-primary w-full" disabled={!cart.length} onClick={saveBill}>Save & Print Bill</button>
+          <button className="btn-primary w-full" disabled={!cart.length || savingBill} onClick={saveBill}>
+            {savingBill ? 'Saving & Printing...' : 'Save & Print Bill'}
+          </button>
         </div>
         </aside>
       </div>
